@@ -13,4 +13,3 @@ def login_message(request):
         return render(request, 'login_message.html')
     else:
         print(request.POST)
- 
