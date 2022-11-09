@@ -35,7 +35,6 @@ class Customer(ActiveBaseModel):
 
 class PricePolicy(models.Model):
     """ Price Strategy table """
-
     count = models.IntegerField(verbose_name="count")
     price = models.DecimalField(verbose_name="price", default=0, max_digits=10, decimal_places=2)
 
@@ -49,17 +48,12 @@ class Order(ActiveBaseModel):
         (4, "fail"),
     )
     status = models.SmallIntegerField(verbose_name="status", choices=status_choices, default=1)
-
-    # 202211022123123123
     oid = models.CharField(verbose_name="order_id", max_length=64, unique=True)
     url = models.URLField(verbose_name="url", db_index=True)
     count = models.IntegerField(verbose_name="count")
-
     price = models.DecimalField(verbose_name="price", default=0, max_digits=10, decimal_places=2)
     real_price = models.DecimalField(verbose_name="real_price", default=0, max_digits=10, decimal_places=2)
-
     old_view_count = models.CharField(verbose_name="old_view_count", max_length=32, default="0")
-
     create_datetime = models.DateTimeField(verbose_name="create_datetime", auto_now_add=True)
     customer = models.ForeignKey(verbose_name="customer", to="Customer", on_delete=models.CASCADE)
     memo = models.TextField(verbose_name="notes", null=True, blank=True)
@@ -76,12 +70,10 @@ class TransactionRecord(ActiveBaseModel):
     }
     charge_type_choices = ((1, "Top up"), (2, "Debit"), (3, "Create Order"), (4, "Delete order"), (5, "Cancel"),)
     charge_type = models.SmallIntegerField(verbose_name="charge_type", choices=charge_type_choices)
-
     customer = models.ForeignKey(verbose_name="customer", to="Customer", on_delete=models.CASCADE)
     amount = models.DecimalField(verbose_name="amount", default=0, max_digits=10, decimal_places=2)
-
-    creator = models.ForeignKey(verbose_name="creator", to="Administrator", on_delete=models.CASCADE, null=True, blank=True)
-
+    creator = models.ForeignKey(verbose_name="creator", to="Administrator", on_delete=models.CASCADE, null=True,
+                                blank=True)
     order_oid = models.CharField(verbose_name="order_id", max_length=64, null=True, blank=True, db_index=True)
     create_datetime = models.DateTimeField(verbose_name="create_datetime", auto_now_add=True)
     memo = models.TextField(verbose_name="notes", null=True, blank=True)
