@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, HttpResponse
 from web import models
 from utils.encrypt import md5
 from django import forms
+import random
+from scripts import send_sms
+from django.http import JsonResponse
 
 
 class LoginForm(forms.Form):
@@ -62,5 +65,21 @@ def login_message(request):
     else:
         print(request.POST)
         return render(request, 'login_message.html')
+
+
+def send_code(request):
+    # check phone number
+    phone = request.POST.get('phone_number')
+    print(phone)
+    if not phone:
+        return JsonResponse({'status': False, 'error': 'phone number is empty'})
+    # random code
+    code = random.randint(1000, 9999)
+    # send code
+    v_code = send_sms.send_sms(phone, code)
+    if v_code:
+        return JsonResponse({'status': True, 'code': code})
+    else:
+        return JsonResponse({'status': False, 'error': 'send code failed, please try again'})
 
 
