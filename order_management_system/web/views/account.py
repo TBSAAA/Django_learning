@@ -5,6 +5,7 @@ from django import forms
 import random
 from scripts import send_sms
 from django.http import JsonResponse
+from django_redis import get_redis_connection
 
 
 class LoginForm(forms.Form):
@@ -23,6 +24,25 @@ class LoginForm(forms.Form):
         required=True,
         widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "password"}, render_value=True),
         error_messages={'required': 'password is required'}
+    )
+
+
+class mobileLoginForm(forms.Form):
+    role = forms.ChoiceField(
+        required=True,
+        choices=(("2", "user"), ("1", "admin")),
+        widget=forms.Select(attrs={"class": "form-control"}),
+        error_messages={'required': 'role is required'}
+    )
+    mobile = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "mobile", "id": "mobile"}),
+        error_messages={'required': 'mobile is required'}
+    )
+    code = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "code"}),
+        error_messages={'required': 'code is required'}
     )
 
 
@@ -61,10 +81,29 @@ def login(request):
 
 def login_message(request):
     if request.method == 'GET':
-        return render(request, 'login_message.html')
+        mobileForms = mobileLoginForm()
+        return render(request, 'login_message.html', {'forms': mobileForms})
     else:
-        print(request.POST)
-        return render(request, 'login_message.html')
+        mobileForms = mobileLoginForm(data=request.POST)
+        if not mobileForms.is_valid():
+            return render(request, 'login_message.html', {'forms': mobileForms})
+        role = mobileForms.cleaned_data.get('role')
+        mobile = mobileForms.cleaned_data.get('mobile')
+        code = mobileForms.cleaned_data.get('code')
+        conn = get_redis_connection("default")
+        if code != conn.get(mobile).decode():
+            return render(request, 'login_message.html', {'forms': mobileForms, 'error': 'code error'})
+        mapping = {'1': 'ADMIN', '2': 'CUSTOMER'}
+        if role not in mapping:
+            return render(request, 'login_message.html', {'forms': mobileForms, 'error': 'role error'})
+        if role == '1':
+            user_object = models.Administrator.objects.filter(active=1, mobile=mobile).first()
+        else:
+            user_object = models.Customer.objects.filter(active=1, mobile=mobile).first()
+        if not user_object:
+            return render(request, 'login_message.html', {'forms': mobileForms, 'error': 'user not exist'})
+        request.session['user_info'] = {'role': mapping[role], 'name': user_object.username, 'id': user_object.id}
+        return redirect('/index/')
 
 
 def send_code(request):
@@ -75,11 +114,14 @@ def send_code(request):
         return JsonResponse({'status': False, 'error': 'phone number is empty'})
     # random code
     code = random.randint(1000, 9999)
+
     # send code
-    v_code = send_sms.send_sms(phone, code)
-    if v_code:
-        return JsonResponse({'status': True, 'code': code})
-    else:
-        return JsonResponse({'status': False, 'error': 'send code failed, please try again'})
+    # v_code = send_sms.send_sms(phone, code)
+    # if v_code:
+    conn = get_redis_connection("default")
+    conn.set(phone, code, ex=60)
+    #     return JsonResponse({'status': True, 'code': code})
+    # else:
+    #     return JsonResponse({'status': False, 'error': 'send code failed, please try again'})
 
-
+    return JsonResponse({'status': True, 'code': code})
