@@ -16,9 +16,19 @@ Including another URLconf
 # from django.contrib import admin
 from django.urls import path
 from web.views import account
+from web.views import level
+
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('login/', account.login, name='login'),
     path('login/message/', account.login_message, name='login_message'),
+
+    path('level/list/', level.level_list, name='level_list'),
+    path('level/add/', level.level_add, name='level_add'),
+    path('level/edit/<int:pk>/', level.level_edit, name='level_edit'),
+    path('level/delete/<int:pk>/', level.level_delete, name='level_delete'),
+
+    path('sendSMS/', account.send_code, name='send_sms'),
+
 ]

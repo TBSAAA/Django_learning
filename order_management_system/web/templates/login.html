@@ -23,22 +23,22 @@
 <body>
 <div class="login_box">
     <h2 style="text-align: center">user login</h2>
-    <form method="post">
+    <form method="post" novalidate>
         {% csrf_token %}
         <div class="form-group">
             <label>Role</label>
-            <select class="form-control" name="role">
-                <option value="1">admin</option>
-                <option value="2">user</option>
-            </select>
+            {{ form.role }}
+            <span style="color: red;">{{ form.role.errors.0 }}</span>
         </div>
         <div class="form-group">
             <label>Username</label>
-            <input type="text" class="form-control" name="username" placeholder="username">
+            {{ form.username }}
+            <span style="color: red;">{{ form.username.errors.0 }}</span>
         </div>
         <div class="form-group">
             <label>Password</label>
-            <input type="password" class="form-control" name="password" placeholder="password">
+            {{ form.password }}
+            <span style="color: red;">{{ form.password.errors.0 }}</span>
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
         <span style="color: red;">{{ error }}</span>

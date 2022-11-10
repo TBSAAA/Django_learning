@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>level list</title>
+    <link rel="stylesheet" href="{% static 'plugins/bootstrap/css/bootstrap.css' %}">
+    <style>
+        .box {
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+<div class="box">
+    <a href='{% url 'level_add' %}' class="btn btn-primary" style="margin-bottom: 20px">add</a>
+    <table class="table table-bordered">
+        <tr>
+            <th>Level</th>
+            <th>Discount</th>
+            <th>Operation</th>
+        </tr>
+        {% for level in levels %}
+            <tr>
+                <td>{{ level.title }}</td>
+                <td>{{ level.percent }}</td>
+                <td>
+                    <a href="{% url 'level_edit' pk=level.id %}">edit</a>
+                    <a href="{% url 'level_delete' pk=level.id %}">delete</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>

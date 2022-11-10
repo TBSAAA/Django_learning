@@ -23,27 +23,85 @@
 <body>
 <div class="login_message_box">
     <h2 style="text-align: center">message login</h2>
-    <form method="post">
+    <form method="post" novalidate>
         {% csrf_token %}
         <div class="form-group">
-            <label>username</label>
-            <input type="text" class="form-control" name="mobile" placeholder="mobile number">
+            <label>Role</label>
+            {{ forms.role }}
+            <span style="color: red;">{{ forms.role.errors.0 }}</span>
+        </div>
+        <div class="form-group">
+            <label>mobile number</label>
+            {{ forms.mobile }}
+            <span style="color: red;" id="mobile_error">{{ forms.mobile.errors.0 }}</span>
         </div>
         <div class="form-group">
             <label>code</label>
             <div class="row">
-                <div class="col-xs-8">
-                    <input type="text" class="form-control" name="code" placeholder="code">
+                <div class="col-xs-7">
+                    {{ forms.code }}
+                    <span style="color: red;">{{ forms.code.errors.0 }}</span>
                 </div>
-                <div class="col-xs-4">
-                    <input type="button" value="send code" class="btn btn-default">
+                <div class="col-xs-5">
+                    <input type="button" value="send code" class="btn btn-default" id="sendCode">
                 </div>
             </div>
         </div>
 
         <button type="submit" class="btn btn-primary">login</button>
+        <span style="color: red;">{{ error }}</span>
         <a href='{% url 'login' %}' style="float:right;">use account login</a>
     </form>
 </div>
 </body>
+
+<script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+<script src="{% static 'js/csrf.js' %}"></script>
+<script type="text/javascript">
+    {#var phone_number = '+61452509135';#}
+    var progressTime = 60;
+
+    $(function () {
+        bindBtnSendCode();
+    });
+
+    function bindBtnSendCode() {
+        $("#sendCode").click(function () {
+            $.ajax({
+                url: '/sendSMS/',
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'phone_number': $('#mobile').val(),
+                },
+                success: function (res) {
+                    if (res.status === true) {
+                        alert(res.code);
+                        $("#sendCode").attr("disabled", true);
+                        timer(progressTime);
+                    } else {
+                        $("#mobile_error").text(res.error);
+                    }
+                }
+            });
+        });
+    }
+
+    function timer(timeout) {
+        var countUI = $("#sendCode");
+        if (timeout > 0) {
+            countUI.val('Send again after ' + timeout + "s");
+            timeout--;
+            setTimeout(function () {
+                timer(timeout);
+            }, 1000);
+        } else {
+            countUI.val("send code");
+            countUI.attr("disabled", false);
+        }
+    }
+
+
+</script>
 </html>
+
