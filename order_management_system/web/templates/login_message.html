@@ -18,29 +18,34 @@
             padding-bottom: 30px;
             box-shadow: 5px 10px 10px rgb(0 0 0 / 10%);
         }
+
+        .error-message {
+            color: red;
+            position: absolute;
+        }
     </style>
 </head>
 <body>
 <div class="login_message_box">
     <h2 style="text-align: center">message login</h2>
-    <form method="post" novalidate>
+    <form method="post" novalidate id="smsForm">
         {% csrf_token %}
-        <div class="form-group">
+        <div class="form-group" style="position: relative; margin-bottom: 25px;">
             <label>Role</label>
             {{ forms.role }}
-            <span style="color: red;">{{ forms.role.errors.0 }}</span>
+            <span class="error-message">{{ forms.role.errors.0 }}</span>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="position: relative; margin-bottom: 25px;">
             <label>mobile number</label>
             {{ forms.mobile }}
-            <span style="color: red;" id="mobile_error">{{ forms.mobile.errors.0 }}</span>
+            <span class="error-message">{{ forms.mobile.errors.0 }}</span>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="position: relative; margin-bottom: 25px;">
             <label>code</label>
             <div class="row">
                 <div class="col-xs-7">
                     {{ forms.code }}
-                    <span style="color: red;">{{ forms.code.errors.0 }}</span>
+                    <span class="error-message">{{ forms.code.errors.0 }}</span>
                 </div>
                 <div class="col-xs-5">
                     <input type="button" value="send code" class="btn btn-default" id="sendCode">
@@ -48,8 +53,8 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">login</button>
-        <span style="color: red;">{{ error }}</span>
+        <button type="button" class="btn btn-primary" id="loginBtn">login</button>
+        <span class="error-message" style="color: red;">{{ error }}</span>
         <a href='{% url 'login' %}' style="float:right;">use account login</a>
     </form>
 </div>
@@ -58,29 +63,54 @@
 <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
 <script src="{% static 'js/csrf.js' %}"></script>
 <script type="text/javascript">
-    {#var phone_number = '+61452509135';#}
     var progressTime = 60;
 
     $(function () {
         bindBtnSendCode();
+        bindLogin();
     });
+
+    function bindLogin(){
+        $("#loginBtn").click(function () {
+            $(".error-message").empty();
+            $.ajax({
+                url: '{% url 'login_message' %}',
+                type: 'POST',
+                data: $("#smsForm").serialize(),
+                dataType: 'JSON',
+                success: function (res) {
+                    if (res.status) {
+                        location.href = res.data;
+                    } else {
+                        $.each(res.error, function (k, v) {
+                            $("#id_" + k).next().text(v[0]);
+                        })
+                    }
+                }
+            });
+
+        });
+    }
 
     function bindBtnSendCode() {
         $("#sendCode").click(function () {
+            // clear all errors
+            $(".error-message").empty();
             $.ajax({
-                url: '/sendSMS/',
+                url: '{% url 'send_sms' %}',
                 type: 'POST',
                 data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'phone_number': $('#mobile').val(),
+                    mobile: $("#id_mobile").val(),
+                    role: $("#id_role").val(),
                 },
+                dataType: 'JSON',
                 success: function (res) {
-                    if (res.status === true) {
-                        alert(res.code);
-                        $("#sendCode").attr("disabled", true);
+                    if (res.status) {
                         timer(progressTime);
                     } else {
-                        $("#mobile_error").text(res.error);
+                        $.each(res.error, function (k, v) {
+                            $("#id_" + k).next().text(v[0]);
+                        })
                     }
                 }
             });
@@ -88,17 +118,17 @@
     }
 
     function timer(timeout) {
-        var countUI = $("#sendCode");
-        if (timeout > 0) {
-            countUI.val('Send again after ' + timeout + "s");
+        var $smsBtn = $("#sendCode");
+        $smsBtn.attr("disabled", true);
+        var reminder = setInterval(function(){
+            $smsBtn.val('Send again after ' + timeout + "s");
             timeout--;
-            setTimeout(function () {
-                timer(timeout);
-            }, 1000);
-        } else {
-            countUI.val("send code");
-            countUI.attr("disabled", false);
-        }
+            if (timeout < 0) {
+                clearInterval(reminder);
+                $smsBtn.val("send code");
+                $smsBtn.attr("disabled", false);
+            }
+        } , 1000);
     }
 
 

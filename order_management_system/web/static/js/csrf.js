@@ -1,5 +1,5 @@
 /**
- * 根据cookie的name获取对应的值
+ * Get the corresponding value according to the name of the cookie
  * @param name
  * @returns {null}
  */
